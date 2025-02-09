@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { GridStackOptions, GridStackWidget } from "gridstack";
+import { GridStackOptions } from "gridstack";
 import {
   ComponentMap,
   GridStackProvider,
@@ -46,7 +46,7 @@ export function Grid() {
 function ItemControls({ id }: { id: string }) {
   const { gridStack } = useGridStackContext();
   const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
-  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [, setSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     const items = gridStack?.getGridItems().find((item) => item.getAttribute("gs-id") === id);
