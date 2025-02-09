@@ -1,7 +1,6 @@
-import { ComponentProps, useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { GridStackOptions } from "gridstack";
 import {
-  ComponentDataType,
   ComponentMap,
   GridStackProvider,
   GridStackRender,
@@ -14,13 +13,9 @@ import "gridstack/dist/gridstack.css";
 import "./grid.css";
 
 const CELL_HEIGHT = 50;
-
-function Text({ content }: { content: string }) {
-  return <div className="w-full h-full">{content}</div>;
-}
+const CELL_MARGIN = 0;
 
 const COMPONENT_MAP: ComponentMap = {
-  Text,
   ItemControls,
   // ... other components here
 };
@@ -28,34 +23,10 @@ const COMPONENT_MAP: ComponentMap = {
 // ! Content must be json string like this:
 // { name: "Text", props: { content: "Item 1" } }
 const gridOptions: GridStackOptions = {
-  margin: 8,
+  margin: CELL_MARGIN,
   cellHeight: CELL_HEIGHT,
-  minRow: 50,
+  minRow: 10,
   float: true,
-  children: [
-    {
-      id: "item1",
-      h: 2,
-      w: 2,
-      x: 0,
-      y: 0,
-      content: JSON.stringify({
-        name: "Text",
-        props: { content: "Item 1" },
-      } satisfies ComponentDataType<ComponentProps<typeof Text>>), // if need type check
-    },
-    {
-      id: "item2",
-      h: 2,
-      w: 2,
-      x: 2,
-      y: 0,
-      content: JSON.stringify({
-        name: "Text",
-        props: { content: "Item 2" },
-      }),
-    },
-  ],
 };
 
 export function Grid() {
@@ -64,165 +35,95 @@ export function Grid() {
 
   return (
     <GridStackProvider initialOptions={initialOptions}>
-      <Toolbar />
-
       <GridStackRenderProvider>
         <GridStackRender componentMap={COMPONENT_MAP} />
-        <GridClick />
       </GridStackRenderProvider>
     </GridStackProvider>
   );
 }
 
-function Toolbar() {
-  const { addWidget } = useGridStackContext();
-
-  return (
-    <div
-      style={{
-        border: "1px solid gray",
-        width: "100%",
-        padding: "10px",
-        marginBottom: "10px",
-        display: "flex",
-        flexDirection: "row",
-        gap: "10px",
-      }}
-    >
-      <button
-        onClick={() => {
-          addWidget((id) => ({
-            w: 3,
-            h: 3,
-            x: 0,
-            y: 0,
-            content: JSON.stringify({
-              name: "Text",
-              props: { content: id },
-            }),
-          }));
-        }}
-      >
-        Add Text
-      </button>
-      <button
-        onClick={() => {
-          addWidget((id) => ({
-            w: 3,
-            h: 3,
-            x: 0,
-            y: 0,
-            content: JSON.stringify({
-              name: "ItemControls",
-              props: { content: id, id, bar: id },
-            }),
-          }));
-        }}
-      >
-        Add Resizable
-      </button>
-    </div>
-  );
-}
-
 function ItemControls({ id }: { id: string }) {
-  const { gridStack } = useGridStackContext();
+  const { gridStack, onChange } = useGridStackContext();
+  const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const items = gridStack?.getGridItems().find((item) => item.getAttribute("gs-id") === id);
+    if (items) {
+      const x = items.getAttribute("gs-x");
+      const y = items.getAttribute("gs-y");
+      setCoordinates({ x: Number(x), y: Number(y) });
+    }
+
+  }, [gridStack, id, onChange]);
 
   const resizeWidget = (width: number, height: number) => {
-    const widget = gridStack?.getGridItems().find((item) => item.getAttribute('gs-id') === id);
+    const widget = gridStack?.getGridItems().find((item) => item.getAttribute("gs-id") === id);
     if (widget) {
       gridStack?.update(widget, { w: width, h: height });
     }
   };
 
   return (
-    <div>
-      <button onClick={() => resizeWidget(8, 3)}>Increase 3 Horizontally</button>
-      <button onClick={() => resizeWidget(3, 8)}>Increase 2 Vertically</button>
-      <button onClick={() => resizeWidget(2, 2)}>Reset to 2x2</button>
+    <div style={{ display: "flex", flexDirection: "column", justifyContent:"center", alignItems:"center", height: 2 * CELL_HEIGHT }}>
+      (x,y): ({coordinates.x},{coordinates.y})
+      <button onClick={() => resizeWidget(8, 3)}>(8x3)</button>
+      <button onClick={() => resizeWidget(3, 8)}>(3x8)</button>
+      <button onClick={() => resizeWidget(2, 2)}>(2x2)</button>
     </div>
   );
-}
-
-function GridClick() {
-  const { addWidget } = useGridStackContext();
-
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    const gridElement = event.currentTarget;
-    const rect = gridElement.getBoundingClientRect();
-    const x = Math.floor((event.clientX - rect.left) / CELL_HEIGHT);
-    const y = Math.floor((event.clientY - rect.top) / CELL_HEIGHT);
-
-    addWidget((id) => ({
-      w: 2,
-      h: 2,
-      x,
-      y,
-      content: JSON.stringify({
-        name: "Text",
-        props: { content: id },
-      }),
-    }));
-  };
-
-  return <div className="grid-click" onClick={handleClick}></div>;
 }
 
 export function WidgetOverlay() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const { addWidget } = useGridStackContext();
+  const [coordonates, setCoordonates] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (target.closest('#overlay-container')) {
-        const gridElement = target.closest('.grid-stack') as HTMLElement;
+      if (target.closest("#overlay-container")) {
+        const gridElement = target.closest(".grid-stack") as HTMLElement;
         const rect = gridElement.getBoundingClientRect();
-        const x = Math.floor((event.clientX - rect.left) / CELL_HEIGHT);
-        const y = Math.floor((event.clientY - rect.top) / CELL_HEIGHT);
+        const x = Math.floor((event.clientX - rect.left) / (CELL_HEIGHT + CELL_MARGIN));
+        const y = Math.floor((event.clientY - rect.top) / (CELL_HEIGHT + CELL_MARGIN));
+        setCoordonates({ x, y });
         if (overlayRef.current) {
-          overlayRef.current.style.display = 'block';
-          overlayRef.current.style.left = `${x * CELL_HEIGHT}px`;
-          overlayRef.current.style.top = `${y * CELL_HEIGHT}px`;
+          overlayRef.current.style.display = "block";
+          overlayRef.current.style.left = `${x * (CELL_HEIGHT + CELL_MARGIN) + CELL_MARGIN}px`;
+          overlayRef.current.style.top = `${y * (CELL_HEIGHT + CELL_MARGIN) + CELL_MARGIN}px`;
         }
-      }
-    };
-
-    const handleMouseOut = () => {
-      if (overlayRef.current) {
-        overlayRef.current.style.display = 'none';
       }
     };
 
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (target.closest('#overlay-container')) {
-        const gridElement = target.closest('.grid-stack') as HTMLElement;
+      if (target.closest("#overlay-container")) {
+        const gridElement = target.closest(".grid-stack") as HTMLElement;
         const rect = gridElement.getBoundingClientRect();
-        const x = Math.floor((event.clientX - rect.left) / CELL_HEIGHT);
-        const y = Math.floor((event.clientY - rect.top) / CELL_HEIGHT);
+        const x = Math.floor((event.clientX - rect.left) / (CELL_HEIGHT + CELL_MARGIN));
+        const y = Math.floor((event.clientY - rect.top) / (CELL_HEIGHT + CELL_MARGIN));
 
+        console.log("Add widget at", x, y);
         addWidget((id) => ({
-          w: 3,
-          h: 3,
+          w: 2,
+          h: 2,
           x,
           y,
+          noResize: true,
           content: JSON.stringify({
             name: "ItemControls",
-            props: { content: id, id, bar: id },
+            props: { id, x, y, w: 2, h: 2 },
           }),
         }));
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseout', handleMouseOut);
-    document.addEventListener('click', handleClick);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("click", handleClick);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseout', handleMouseOut);
-      document.removeEventListener('click', handleClick);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("click", handleClick);
     };
   }, [addWidget]);
 
@@ -230,14 +131,16 @@ export function WidgetOverlay() {
     <div
       ref={overlayRef}
       style={{
-        display: 'none',
-        position: 'absolute',
-        width: `${2 * CELL_HEIGHT}px`,
-        height: `${2 * CELL_HEIGHT}px`,
-        backgroundColor: 'rgba(0, 0, 0, 0.1)',
-        border: '1px dashed #000',
-        pointerEvents: 'none',
+        display: "none",
+        position: "absolute",
+        width: `${2 * CELL_HEIGHT - CELL_MARGIN}px`,
+        height: `${2 * CELL_HEIGHT - CELL_MARGIN}px`,
+        backgroundColor: "rgba(0, 0, 0, 0.1)",
+        border: "1px dashed #000",
+        pointerEvents: "none",
       }}
-    ></div>
+    >
+      {coordonates.x},{coordonates.y}
+    </div>
   );
 }

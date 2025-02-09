@@ -44,7 +44,7 @@ export function GridStackRender(props: { componentMap: ComponentMap }) {
   const { getWidgetContainer } = useGridStackRenderContext();
 
   return (
-    <>
+    <div id="overlay-container" style={{ height: "100vh", width: "100%" }}>
       <WidgetOverlay />
       {Array.from(_rawWidgetMetaMap.value.entries()).map(([id, meta]) => {
         const componentData = parseWeightMetaToComponentData(meta);
@@ -58,13 +58,13 @@ export function GridStackRender(props: { componentMap: ComponentMap }) {
         }
 
         return (
-          <div key={id} id="overlay-container" style={{ height: "100vh", width: "100%" }}>
+          <div key={id}>
             <GridStackWidgetContext.Provider key={id} value={{ widget: { id } }}>
               {createPortal(<WidgetComponent {...componentData.props} />, widgetContainer)}
             </GridStackWidgetContext.Provider>
           </div>
         );
       })}
-    </>
+    </div>
   );
 }

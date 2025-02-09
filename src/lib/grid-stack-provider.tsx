@@ -1,5 +1,5 @@
 import type { GridStack, GridStackOptions, GridStackWidget } from "gridstack";
-import { type PropsWithChildren, useCallback, useState } from "react";
+import { type PropsWithChildren, useCallback, useEffect, useState } from "react";
 import { GridStackContext } from "./grid-stack-context";
 
 export function GridStackProvider({
@@ -46,6 +46,28 @@ export function GridStackProvider({
     [gridStack]
   );
 
+  // Event change(event, items)
+  const onChange = useCallback(
+    (event: Event, items: GridStackWidget[]) => {
+      console.log('Event', event, items);
+      setRawWidgetMetaMap((prev) => {
+        const newMap = new Map<string, GridStackWidget>(prev);
+        items.forEach((item) => {
+          if (item.id) {
+            newMap.set(item.id, item);
+          }
+        });
+        return newMap;
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    gridStack?.on('change', onChange);
+  }, [gridStack, onChange]);
+
+
   const saveOptions = useCallback(() => {
     return gridStack?.save(true, true, (_, widget) => widget);
   }, [gridStack]);
@@ -68,6 +90,8 @@ export function GridStackProvider({
           value: rawWidgetMetaMap,
           set: setRawWidgetMetaMap,
         },
+
+        onChange,
       }}
     >
       {children}
