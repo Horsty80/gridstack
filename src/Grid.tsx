@@ -170,6 +170,7 @@ function GridClick() {
 
 export function WidgetOverlay() {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const { addWidget } = useGridStackContext();
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -193,14 +194,37 @@ export function WidgetOverlay() {
       }
     };
 
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest('#overlay-container')) {
+        const gridElement = target.closest('.grid-stack') as HTMLElement;
+        const rect = gridElement.getBoundingClientRect();
+        const x = Math.floor((event.clientX - rect.left) / CELL_HEIGHT);
+        const y = Math.floor((event.clientY - rect.top) / CELL_HEIGHT);
+
+        addWidget((id) => ({
+          w: 3,
+          h: 3,
+          x,
+          y,
+          content: JSON.stringify({
+            name: "ItemControls",
+            props: { content: id, id, bar: id },
+          }),
+        }));
+      }
+    };
+
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseout', handleMouseOut);
+    document.addEventListener('click', handleClick);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseout', handleMouseOut);
+      document.removeEventListener('click', handleClick);
     };
-  }, []);
+  }, [addWidget]);
 
   return (
     <div
