@@ -21,6 +21,7 @@ function Text({ content }: { content: string }) {
 
 const COMPONENT_MAP: ComponentMap = {
   Text,
+  ItemControls,
   // ... other components here
 };
 
@@ -53,7 +54,7 @@ const gridOptions: GridStackOptions = {
         name: "Text",
         props: { content: "Item 2" },
       }),
-    }
+    },
   ],
 };
 
@@ -62,13 +63,13 @@ export function Grid() {
   const [initialOptions] = useState(gridOptions);
 
   return (
-      <GridStackProvider initialOptions={initialOptions}>
-        <Toolbar />
+    <GridStackProvider initialOptions={initialOptions}>
+      <Toolbar />
 
-        <GridStackRenderProvider>
-          <GridStackRender componentMap={COMPONENT_MAP} />
-        </GridStackRenderProvider>
-      </GridStackProvider>
+      <GridStackRenderProvider>
+        <GridStackRender componentMap={COMPONENT_MAP} />
+      </GridStackRenderProvider>
+    </GridStackProvider>
   );
 }
 
@@ -90,8 +91,8 @@ function Toolbar() {
       <button
         onClick={() => {
           addWidget((id) => ({
-            w: 2,
-            h: 2,
+            w: 3,
+            h: 3,
             x: 0,
             y: 0,
             content: JSON.stringify({
@@ -101,8 +102,43 @@ function Toolbar() {
           }));
         }}
       >
-        Add Text (2x2)
+        Add Text
       </button>
+      <button
+        onClick={() => {
+          addWidget((id) => ({
+            w: 3,
+            h: 3,
+            x: 0,
+            y: 0,
+            content: JSON.stringify({
+              name: "ItemControls",
+              props: { content: id, id, bar: id },
+            }),
+          }));
+        }}
+      >
+        Add Resizable
+      </button>
+    </div>
+  );
+}
+
+function ItemControls({ id }: { id: string }) {
+  const { gridStack } = useGridStackContext();
+
+  const resizeWidget = (width: number, height: number) => {
+    const widget = gridStack?.getGridItems().find((item) => item.getAttribute('gs-id') === id);
+    if (widget) {
+      gridStack?.update(widget, { w: width, h: height });
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={() => resizeWidget(5, 2)}>Increase 3 Horizontally</button>
+      <button onClick={() => resizeWidget(2, 4)}>Increase 2 Vertically</button>
+      <button onClick={() => resizeWidget(2, 2)}>Reset to 2x2</button>
     </div>
   );
 }
