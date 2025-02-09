@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { GridStackOptions } from "gridstack";
+import { GridStackOptions, GridStackWidget } from "gridstack";
 import {
   ComponentMap,
   GridStackProvider,
@@ -13,7 +13,7 @@ import "gridstack/dist/gridstack.css";
 import "./grid.css";
 
 const CELL_HEIGHT = 50;
-const CELL_MARGIN = 0;
+const CELL_MARGIN = 4; // Updated to match the margin defined in gridstack.scss
 
 const COMPONENT_MAP: ComponentMap = {
   ItemControls,
@@ -25,6 +25,7 @@ const COMPONENT_MAP: ComponentMap = {
 const gridOptions: GridStackOptions = {
   margin: CELL_MARGIN,
   cellHeight: CELL_HEIGHT,
+  sizeToContent: true,
   minRow: 10,
   float: true,
 };
@@ -43,8 +44,9 @@ export function Grid() {
 }
 
 function ItemControls({ id }: { id: string }) {
-  const { gridStack, onChange } = useGridStackContext();
+  const { gridStack } = useGridStackContext();
   const [coordinates, setCoordinates] = useState({ x: 0, y: 0 });
+  const [size, setSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     const items = gridStack?.getGridItems().find((item) => item.getAttribute("gs-id") === id);
@@ -52,9 +54,11 @@ function ItemControls({ id }: { id: string }) {
       const x = items.getAttribute("gs-x");
       const y = items.getAttribute("gs-y");
       setCoordinates({ x: Number(x), y: Number(y) });
+        const w = items.getAttribute("gs-w");
+        const h = items.getAttribute("gs-h");
+        setSize({ w: Number(w), h: Number(h) });
     }
-
-  }, [gridStack, id, onChange]);
+  }, [gridStack, id]);
 
   const resizeWidget = (width: number, height: number) => {
     const widget = gridStack?.getGridItems().find((item) => item.getAttribute("gs-id") === id);
@@ -64,7 +68,7 @@ function ItemControls({ id }: { id: string }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", justifyContent:"center", alignItems:"center", height: 2 * CELL_HEIGHT }}>
+    <div style={{ display: "flex", flexDirection: "column", justifyContent:"center", alignItems:"center", height: "100%" }}>
       (x,y): ({coordinates.x},{coordinates.y})
       <button onClick={() => resizeWidget(8, 3)}>(8x3)</button>
       <button onClick={() => resizeWidget(3, 8)}>(3x8)</button>
@@ -89,8 +93,8 @@ export function WidgetOverlay() {
         setCoordonates({ x, y });
         if (overlayRef.current) {
           overlayRef.current.style.display = "block";
-          overlayRef.current.style.left = `${x * (CELL_HEIGHT + CELL_MARGIN) + CELL_MARGIN}px`;
-          overlayRef.current.style.top = `${y * (CELL_HEIGHT + CELL_MARGIN) + CELL_MARGIN}px`;
+          overlayRef.current.style.left = `${x * (CELL_HEIGHT + CELL_MARGIN)}px`;
+          overlayRef.current.style.top = `${y * (CELL_HEIGHT + CELL_MARGIN)}px`;
         }
       }
     };
@@ -105,14 +109,14 @@ export function WidgetOverlay() {
 
         console.log("Add widget at", x, y);
         addWidget((id) => ({
-          w: 2,
-          h: 2,
+          w: 3,
+          h: 3,
           x,
           y,
           noResize: true,
           content: JSON.stringify({
             name: "ItemControls",
-            props: { id, x, y, w: 2, h: 2 },
+            props: { id, x, y, w: 3, h: 3 },
           }),
         }));
       }
@@ -133,10 +137,9 @@ export function WidgetOverlay() {
       style={{
         display: "none",
         position: "absolute",
-        width: `${2 * CELL_HEIGHT - CELL_MARGIN}px`,
-        height: `${2 * CELL_HEIGHT - CELL_MARGIN}px`,
+        width: `${3 * CELL_HEIGHT + CELL_MARGIN}px`,
+        height: `${3 * CELL_HEIGHT + CELL_MARGIN}px`,
         backgroundColor: "rgba(0, 0, 0, 0.1)",
-        border: "1px dashed #000",
         pointerEvents: "none",
       }}
     >
