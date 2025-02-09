@@ -4,6 +4,7 @@ import { useGridStackRenderContext } from "./grid-stack-render-context";
 import { GridStackWidgetContext } from "./grid-stack-widget-context";
 import { GridStackWidget } from "gridstack";
 import { ComponentType } from "react";
+import { WidgetOverlay } from "../Grid";
 
 export interface ComponentDataType<T = object> {
   name: string;
@@ -56,12 +57,17 @@ export function GridStackRender(props: { componentMap: ComponentMap }) {
         }
 
         return (
-          <GridStackWidgetContext.Provider key={id} value={{ widget: { id } }}>
-            {createPortal(
-              <WidgetComponent {...componentData.props} />,
-              widgetContainer
-            )}
-          </GridStackWidgetContext.Provider>
+          <div
+          key={id}
+            id="overlay-container"
+            onClick={() => console.log("click")}
+            style={{ height: "100vh", width: "100%" }}
+          >
+            <WidgetOverlay />
+            <GridStackWidgetContext.Provider key={id} value={{ widget: { id } }}>
+              {createPortal(<WidgetComponent {...componentData.props} />, widgetContainer)}
+            </GridStackWidgetContext.Provider>
+          </div>
         );
       })}
     </>
